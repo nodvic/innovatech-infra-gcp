@@ -25,12 +25,12 @@ variable "database_version" {
 
 variable "database_tier" {
   type    = string
-  default = "db-n1-standard-2"
+  default = "db-f1-micro"
 }
 
 variable "disk_size" {
   type    = number
-  default = 20
+  default = 10
 }
 
 variable "db_user" {

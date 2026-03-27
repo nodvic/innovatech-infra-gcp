@@ -3,16 +3,17 @@ resource "google_sql_database_instance" "main" {
   project             = var.project_id
   region              = var.region
   database_version    = var.database_version
-  deletion_protection = true
+  deletion_protection = false
 
   depends_on = [var.private_service_connect_connection]
 
   settings {
     tier              = var.database_tier
-    availability_type = "REGIONAL"
-    disk_size         = var.disk_size
-    disk_type         = "PD_SSD"
-    disk_autoresize   = true
+    availability_type = "ZONAL"
+
+    disk_size       = var.disk_size
+    disk_type       = "PD_HDD"
+    disk_autoresize = true
 
     ip_configuration {
       ipv4_enabled                                  = false
