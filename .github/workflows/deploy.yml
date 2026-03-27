@@ -1,0 +1,31 @@
+name: Terraform Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    runs-on: self-hosted
+    env:
+      TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_region: ${{ vars.GCP_REGION }}
+      TF_VAR_zone: ${{ vars.GCP_ZONE }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./environments/prod
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./environments/prod
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./environments/prod
