@@ -120,33 +120,6 @@ resource "google_monitoring_alert_policy" "soar_function_errors" {
   }
 }
 
-resource "google_monitoring_alert_policy" "vpn_tunnel_down" {
-  display_name = "innovatech-alert-vpn-tunnel-${var.environment}"
-  project      = var.project_id
-  combiner     = "OR"
-
-  conditions {
-    display_name = "VPN Tunnel Down"
-
-    condition_threshold {
-      filter          = "resource.type = \"vpn_gateway\" AND metric.type = \"compute.googleapis.com/vpn/tunnel_established\""
-      comparison      = "COMPARISON_LT"
-      threshold_value = 1
-      duration        = "60s"
-
-      aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
-      }
-    }
-  }
-
-  notification_channels = [google_monitoring_notification_channel.email.id]
-
-  alert_strategy {
-    auto_close = "1800s"
-  }
-}
 
 resource "google_monitoring_dashboard" "main" {
   dashboard_json = jsonencode({
