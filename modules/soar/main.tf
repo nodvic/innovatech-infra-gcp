@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "soar_functions" {
-  name                        = "innovatech-soar-functions-${var.project_id}-${var.region}-${var.environment}"
+  name                        = "soar-fn-${var.project_id}-${var.region}"
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = true
