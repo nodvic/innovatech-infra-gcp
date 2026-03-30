@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "soar_functions" {
-  name                        = "innovatech-soar-functions-${var.project_id}-${var.environment}"
+  name                        = "innovatech-soar-functions-${var.project_id}-${var.region}-${var.environment}"
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = true
@@ -67,13 +67,13 @@ resource "google_cloudfunctions_function" "email_notification" {
   timeout               = 120
 
   environment_variables = {
-    SMTP_SERVER   = var.smtp_server
-    SMTP_PORT     = var.smtp_port
-    SENDER_EMAIL  = var.sender_email
-    ALERT_EMAIL   = var.alert_email
+    SMTP_SERVER  = var.smtp_server
+    SMTP_PORT    = var.smtp_port
+    SENDER_EMAIL = var.sender_email
+    ALERT_EMAIL  = var.alert_email
   }
 
-  vpc_connector         = google_vpc_access_connector.soar_connector.id
+  vpc_connector = google_vpc_access_connector.soar_connector.id
 }
 
 resource "google_cloudfunctions_function" "webhook" {
@@ -92,7 +92,7 @@ resource "google_cloudfunctions_function" "webhook" {
     WEBHOOK_URL = var.webhook_url
   }
 
-  vpc_connector         = google_vpc_access_connector.soar_connector.id
+  vpc_connector = google_vpc_access_connector.soar_connector.id
 }
 
 resource "google_cloudfunctions_function" "firewall_block" {
@@ -112,7 +112,7 @@ resource "google_cloudfunctions_function" "firewall_block" {
     NETWORK_NAME   = var.hub_network_name
   }
 
-  vpc_connector         = google_vpc_access_connector.soar_connector.id
+  vpc_connector = google_vpc_access_connector.soar_connector.id
 }
 
 resource "google_cloudfunctions_function" "db_logging" {
@@ -134,7 +134,7 @@ resource "google_cloudfunctions_function" "db_logging" {
     DB_PASSWORD        = var.db_password
   }
 
-  vpc_connector         = google_vpc_access_connector.soar_connector.id
+  vpc_connector = google_vpc_access_connector.soar_connector.id
 }
 
 resource "google_vpc_access_connector" "soar_connector" {
