@@ -49,7 +49,7 @@ module "soar" {
   source = "../../modules/soar"
 
   project_id              = var.project_id
-  region                  = var.region
+  region                  = "europe-west1"
   environment             = var.environment
   spoke_network_name      = module.network.spoke_network_name
   hub_network_name        = module.network.hub_network_name

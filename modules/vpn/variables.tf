@@ -26,12 +26,12 @@ variable "peer_asn" {
 
 variable "peer_gateway_ip_0" {
   type    = string
-  default = "203.0.113.1"
+  default = "8.8.8.8"
 }
 
 variable "peer_gateway_ip_1" {
   type    = string
-  default = "203.0.113.2"
+  default = "8.8.4.4"
 }
 
 variable "vpn_shared_secret" {
