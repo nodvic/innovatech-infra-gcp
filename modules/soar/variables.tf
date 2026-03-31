@@ -20,7 +20,7 @@ variable "hub_network_name" {
 
 variable "connector_cidr" {
   type    = string
-  default = "10.8.0.0/28"
+  default = "10.20.2.0/28"
 }
 
 variable "smtp_server" {

@@ -12,10 +12,10 @@ variable "environment" {
 
 variable "hub_subnet_cidr" {
   type    = string
-  default = "10.0.0.0/24"
+  default = "10.10.1.0/24"
 }
 
 variable "spoke_subnet_cidr" {
   type    = string
-  default = "10.1.0.0/24"
+  default = "10.20.1.0/24"
 }
