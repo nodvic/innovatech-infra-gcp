@@ -6,15 +6,6 @@ module "network" {
   environment = var.environment
 }
 
-module "vpn" {
-  source = "../../modules/vpn"
-
-  project_id     = var.project_id
-  region         = var.region
-  environment    = var.environment
-  hub_network_id = module.network.hub_network_id
-}
-
 module "security" {
   source = "../../modules/security"
 
