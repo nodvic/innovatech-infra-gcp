@@ -44,8 +44,7 @@ resource "google_compute_network_peering" "spoke_to_hub" {
   peer_network         = google_compute_network.hub.self_link
   export_custom_routes = true
   import_custom_routes = true
-
-  depends_on = [google_compute_network_peering.hub_to_spoke]
+  depends_on           = [google_compute_network_peering.hub_to_spoke]
 }
 
 resource "google_compute_global_address" "private_service_connect" {
@@ -61,4 +60,5 @@ resource "google_service_networking_connection" "private_service_connect" {
   network                 = google_compute_network.spoke.id
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_service_connect.name]
+  depends_on              = [google_compute_network_peering.spoke_to_hub]
 }
