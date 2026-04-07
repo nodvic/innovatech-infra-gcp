@@ -56,3 +56,15 @@ module "monitoring" {
   project_id  = var.project_id
   environment = var.environment
 }
+
+module "vpn" {
+  source = "../../modules/vpn"
+
+  project_id        = var.project_id
+  region            = var.region
+  environment       = var.environment
+  hub_network_id    = module.network.hub_network_id
+  peer_gateway_ip_0 = var.peer_gateway_ip_0
+  peer_gateway_ip_1 = var.peer_gateway_ip_1
+  vpn_shared_secret = var.vpn_shared_secret
+}
