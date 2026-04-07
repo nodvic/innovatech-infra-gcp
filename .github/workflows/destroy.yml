@@ -24,6 +24,14 @@ jobs:
         run: terraform init
         working-directory: ./environments/prod
 
-      - name: Terraform Destroy
+      - name: Destroy Apps and Database First
+        run: terraform destroy -target="module.database" -target="module.soar" -auto-approve
+        working-directory: ./environments/prod
+
+      - name: Wait for GCP Network Cleanup
+        run: sleep 180
+        shell: bash
+
+      - name: Destroy Remaining Infrastructure
         run: terraform destroy -auto-approve
         working-directory: ./environments/prod
