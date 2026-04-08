@@ -32,8 +32,9 @@ jobs:
         working-directory: ./environments/prod
 
       - name: Wait for GCP Network Cleanup
-        run: sleep 180
-        shell: bash
+        run: |
+          echo "Wachten op het vrijgeven van netwerkresources..."
+          Start-Sleep -s 180
 
       - name: Destroy Remaining Infrastructure
         run: terraform destroy -auto-approve
