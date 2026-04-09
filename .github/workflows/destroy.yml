@@ -27,15 +27,20 @@ jobs:
         run: terraform init
         working-directory: ./environments/prod
 
-      - name: Destroy Apps and Database First
+      - name: Destroy Apps and Database
         run: terraform destroy -target="module.database" -target="module.soar" -auto-approve
         working-directory: ./environments/prod
+        continue-on-error: true
 
-      - name: Wait for GCP Network Cleanup
+      - name: Force Cleanup Service Networking
         run: |
-          echo "Wachten op het vrijgeven van netwerkresources..."
-          Start-Sleep -s 180
+          echo "Forceer verwijdering van de Service Networking Peering..."
+          gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet || true
+        # Gebruikt gcloud om de blokkade direct op te heffen
 
-      - name: Destroy Remaining Infrastructure
+      - name: Wait for GCP Release
+        run: Start-Sleep -s 60
+
+      - name: Final Terraform Destroy
         run: terraform destroy -auto-approve
         working-directory: ./environments/prod
