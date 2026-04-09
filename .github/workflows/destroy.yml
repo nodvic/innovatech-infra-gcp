@@ -27,7 +27,7 @@ jobs:
         run: terraform init
         working-directory: ./environments/prod
 
-      - name: Destroy Apps and Database
+      - name: Destroy Apps and Database First
         run: terraform destroy -target="module.database" -target="module.soar" -auto-approve
         working-directory: ./environments/prod
         continue-on-error: true
@@ -36,16 +36,20 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Forceer verwijdering van de Service Networking Peering..."
-          $ErrorActionPreference = "SilentlyContinue"
-          gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet
+          $ErrorActionPreference = "Continue"
+          # Voer gcloud uit en negeer foutmeldingen als de resource al weg is
+          gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet 2>$null
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "Peering was waarschijnlijk al weg of kon niet worden gevonden. We gaan door..."
+            Write-Host "Peering of netwerk niet gevonden (mogelijk al handmatig verwijderd). We gaan door naar de volledige destroy."
           }
+          exit 0
 
-      - name: Wait for GCP Release
+      - name: Wait for GCP Network Cleanup
         shell: powershell
         run: Start-Sleep -s 60
 
       - name: Final Terraform Destroy
-        run: terraform destroy -auto-approve
+        run: |
+          terraform refresh
+          terraform destroy -auto-approve
         working-directory: ./environments/prod
