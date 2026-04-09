@@ -34,9 +34,12 @@ jobs:
 
       - name: Force Cleanup Service Networking
         run: |
-          echo "Forceer verwijdering van de Service Networking Peering..."
-          gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet || true
-        # Gebruikt gcloud om de blokkade direct op te heffen
+          Write-Host "Forceer verwijdering van de Service Networking Peering..."
+          try {
+            gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet
+          } catch {
+            Write-Host "Peering was waarschijnlijk al verwijderd of kon niet worden gevonden."
+          }
 
       - name: Wait for GCP Release
         run: Start-Sleep -s 60
