@@ -33,15 +33,17 @@ jobs:
         continue-on-error: true
 
       - name: Force Cleanup Service Networking
+        shell: powershell
         run: |
           Write-Host "Forceer verwijdering van de Service Networking Peering..."
-          try {
-            gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet
-          } catch {
-            Write-Host "Peering was waarschijnlijk al verwijderd of kon niet worden gevonden."
+          $ErrorActionPreference = "SilentlyContinue"
+          gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=${{ vars.GCP_PROJECT_ID }} --quiet
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Peering was waarschijnlijk al weg of kon niet worden gevonden. We gaan door..."
           }
 
       - name: Wait for GCP Release
+        shell: powershell
         run: Start-Sleep -s 60
 
       - name: Final Terraform Destroy
