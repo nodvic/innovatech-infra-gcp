@@ -2,8 +2,8 @@ output "notification_channel_id" {
   value = google_monitoring_notification_channel.email.id
 }
 
-output "cpu_alert_policy_id" {
-  value = google_monitoring_alert_policy.cpu_high.id
+output "ssh_brute_force_alert_policy_id" {
+  value = google_monitoring_alert_policy.ssh_brute_force.id
 }
 
 output "sql_cpu_alert_policy_id" {

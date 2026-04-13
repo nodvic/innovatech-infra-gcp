@@ -8,23 +8,35 @@ resource "google_monitoring_notification_channel" "email" {
   }
 }
 
-resource "google_monitoring_alert_policy" "cpu_high" {
-  display_name = "innovatech-alert-cpu-critical-${var.environment}"
+resource "google_logging_metric" "ssh_failed_logins" {
+  name    = "innovatech-metric-ssh-failed-${var.environment}"
+  project = var.project_id
+  filter  = "resource.type=\"gce_instance\" AND log_name=\"projects/${var.project_id}/logs/auth\" AND textPayload:\"Failed password\""
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+  }
+}
+
+resource "google_monitoring_alert_policy" "ssh_brute_force" {
+  display_name = "innovatech-alert-soar-ssh-${var.environment}"
   project      = var.project_id
   combiner     = "OR"
 
   conditions {
-    display_name = "CPU Utilization > 80%"
+    display_name = "SSH Brute Force Detected"
 
     condition_threshold {
-      filter          = "resource.type = \"gce_instance\" AND metric.type = \"compute.googleapis.com/instance/cpu/utilization\""
+      filter          = "metric.type=\"logging.googleapis.com/user/${google_logging_metric.ssh_failed_logins.name}\" AND resource.type=\"gce_instance\""
+      duration        = "0s"
       comparison      = "COMPARISON_GT"
-      threshold_value = 0.8
-      duration        = "300s"
+      threshold_value = 2
 
       aggregations {
-        alignment_period   = "60s"
-        per_series_aligner = "ALIGN_MEAN"
+        alignment_period   = "300s"
+        per_series_aligner = "ALIGN_COUNT"
       }
     }
   }
@@ -128,12 +140,12 @@ resource "google_monitoring_dashboard" "main" {
       columns = 2
       widgets = [
         {
-          title = "VM CPU Utilization"
+          title = "SSH Failed Logins"
           xyChart = {
             dataSets = [{
               timeSeriesQuery = {
                 timeSeriesFilter = {
-                  filter = "resource.type = \"gce_instance\" AND metric.type = \"compute.googleapis.com/instance/cpu/utilization\""
+                  filter = "metric.type = \"logging.googleapis.com/user/innovatech-metric-ssh-failed-${var.environment}\" AND resource.type = \"gce_instance\""
                 }
               }
             }]
