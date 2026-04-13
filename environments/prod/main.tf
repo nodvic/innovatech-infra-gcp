@@ -53,8 +53,9 @@ module "soar" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  project_id  = var.project_id
-  environment = var.environment
+  project_id                = var.project_id
+  environment               = var.environment
+  soar_webhook_function_url = module.soar.webhook_function_url
 }
 
 module "vpn" {

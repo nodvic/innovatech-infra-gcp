@@ -43,11 +43,6 @@ variable "alert_email" {
   default = "security@innovatech.io"
 }
 
-variable "webhook_url" {
-  type    = string
-  default = "https://hooks.slack.com/services/PLACEHOLDER"
-}
-
 variable "db_connection_name" {
   type = string
 }

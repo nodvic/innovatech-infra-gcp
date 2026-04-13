@@ -28,6 +28,12 @@ resource "google_project_iam_member" "soar_monitoring_viewer" {
   member  = "serviceAccount:${google_service_account.soar_sa.email}"
 }
 
+resource "google_project_iam_member" "soar_logging_viewer" {
+  project = var.project_id
+  role    = "roles/logging.viewer"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
+}
+
 resource "google_compute_firewall" "allow_internal" {
   name    = "innovatech-fw-allow-internal-${var.environment}"
   project = var.project_id

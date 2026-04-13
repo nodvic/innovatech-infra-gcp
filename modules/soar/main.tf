@@ -89,10 +89,14 @@ resource "google_cloudfunctions_function" "webhook" {
   timeout               = 120
 
   environment_variables = {
-    WEBHOOK_URL = var.webhook_url
+    GCP_PROJECT_ID          = var.project_id
+    FIREWALL_FUNCTION_URL   = google_cloudfunctions_function.firewall_block.https_trigger_url
+    EMAIL_FUNCTION_URL      = google_cloudfunctions_function.email_notification.https_trigger_url
+    DB_LOGGING_FUNCTION_URL = google_cloudfunctions_function.db_logging.https_trigger_url
   }
 
-  vpc_connector = google_vpc_access_connector.soar_connector.id
+  vpc_connector         = google_vpc_access_connector.soar_connector.id
+  service_account_email = var.invoker_service_account
 }
 
 resource "google_cloudfunctions_function" "firewall_block" {
@@ -158,7 +162,7 @@ resource "google_cloudfunctions_function_iam_member" "webhook_invoker" {
   region         = var.region
   cloud_function = google_cloudfunctions_function.webhook.name
   role           = "roles/cloudfunctions.invoker"
-  member         = "serviceAccount:${var.invoker_service_account}"
+  member         = "allUsers"
 }
 
 resource "google_cloudfunctions_function_iam_member" "firewall_invoker" {

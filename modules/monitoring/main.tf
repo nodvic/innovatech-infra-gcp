@@ -20,6 +20,16 @@ resource "google_logging_metric" "ssh_failed_logins" {
   }
 }
 
+resource "google_monitoring_notification_channel" "soar_webhook" {
+  display_name = "innovatech-alert-channel-webhook-${var.environment}"
+  project      = var.project_id
+  type         = "webhook_tokenauth"
+
+  labels = {
+    url = var.soar_webhook_function_url
+  }
+}
+
 resource "google_monitoring_alert_policy" "ssh_brute_force" {
   display_name = "innovatech-alert-soar-ssh-${var.environment}"
   project      = var.project_id
@@ -41,7 +51,10 @@ resource "google_monitoring_alert_policy" "ssh_brute_force" {
     }
   }
 
-  notification_channels = [google_monitoring_notification_channel.email.id]
+  notification_channels = [
+    google_monitoring_notification_channel.email.id,
+    google_monitoring_notification_channel.soar_webhook.id
+  ]
 
   alert_strategy {
     auto_close = "1800s"
