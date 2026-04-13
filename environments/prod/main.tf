@@ -39,15 +39,14 @@ module "dns" {
 module "soar" {
   source = "../../modules/soar"
 
-  project_id              = var.project_id
-  region                  = "europe-west1"
-  environment             = var.environment
-  spoke_network_name      = module.network.spoke_network_name
-  hub_network_name        = module.network.hub_network_name
-  db_connection_name      = module.database.instance_connection_name
-  db_name                 = module.database.database_name
-  db_password             = var.db_password
-  invoker_service_account = module.security.soar_service_account_email
+  project_id         = var.project_id
+  region             = "europe-west1"
+  environment        = var.environment
+  spoke_network_name = module.network.spoke_network_name
+  hub_network_name   = module.network.hub_network_name
+  db_connection_name = module.database.instance_connection_name
+  db_name            = module.database.database_name
+  db_password        = var.db_password
 }
 
 module "monitoring" {
@@ -55,7 +54,7 @@ module "monitoring" {
 
   project_id                = var.project_id
   environment               = var.environment
-  soar_webhook_function_url = module.soar.webhook_function_url
+  soar_webhook_function_url = module.soar.soar_handler_function_url
 }
 
 module "vpn" {
