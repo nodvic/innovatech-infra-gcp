@@ -1,0 +1,3 @@
+# Forceer LF line endings voor alle tekstbestanden
+# Dit voorkomt dat Windows CRLF-regeleinden problemen veroorzaken op Linux VMs
+* text=auto eol=lf

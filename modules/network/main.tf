@@ -62,3 +62,18 @@ resource "google_service_networking_connection" "private_service_connect" {
   reserved_peering_ranges = [google_compute_global_address.private_service_connect.name]
   depends_on              = [google_compute_network_peering.spoke_to_hub]
 }
+
+# Firewallregel om SSH-verkeer (poort 22) toe te staan naar VMs in het spoke-netwerk
+resource "google_compute_firewall" "allow_ssh_spoke" {
+  name    = "allow-ssh-spoke-${var.environment}"
+  network = google_compute_network.spoke.name
+  project = var.project_id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  priority      = 1000
+}

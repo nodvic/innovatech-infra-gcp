@@ -93,10 +93,10 @@ resource "google_compute_instance" "test_vm" {
 
   # Installatie van de Ops Agent is essentieel voor de 'auth.log' doorstroom
   metadata_startup_script = <<-EOT
-    #!/bin/bash
-    curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
-    sudo bash add-google-cloud-ops-agent-repo.sh --also-install
-  EOT
+#!/bin/bash
+curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+EOT
 
   service_account {
     # De VM heeft minimaal de rol 'roles/logging.logWriter' nodig
