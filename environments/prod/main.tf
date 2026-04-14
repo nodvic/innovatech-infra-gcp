@@ -94,6 +94,9 @@ resource "google_compute_instance" "test_vm" {
   # Installatie van de Ops Agent is essentieel voor de 'auth.log' doorstroom
   metadata_startup_script = <<-EOT
 #!/bin/bash
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+systemctl restart ssh
 curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
 sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 EOT
