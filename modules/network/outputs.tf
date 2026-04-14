@@ -38,6 +38,10 @@ output "spoke_subnet_self_link" {
   value = google_compute_subnetwork.spoke.self_link
 }
 
+output "spoke_subnet_name" {
+  value = google_compute_subnetwork.spoke.name
+}
+
 output "private_service_connect_connection" {
   value = google_service_networking_connection.private_service_connect.id
 }

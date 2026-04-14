@@ -72,7 +72,7 @@ module "vpn" {
 resource "google_compute_instance" "test_vm" {
   name         = "soar-test-vm-prod"
   machine_type = "e2-micro"
-  zone         = "europe-west1-b"
+  zone         = "${var.region}-b"
   project      = var.project_id
 
   boot_disk {
@@ -84,7 +84,7 @@ resource "google_compute_instance" "test_vm" {
   network_interface {
     # Gebruik de output van de netwerkmodule voor consistentie
     network    = module.network.spoke_network_name
-    subnetwork = "spoke-subnet-prod"
+    subnetwork = module.network.spoke_subnet_name
 
     access_config {
       # Noodzakelijk voor een extern IP zodat je vanaf je eigen laptop kunt SSH'en
