@@ -29,6 +29,7 @@ resource "google_cloudfunctions_function" "soar_handler" {
   trigger_http          = true
   available_memory_mb   = 256
   timeout               = 120
+  service_account_email = google_service_account.soar_sa.email
 
   environment_variables = {
     GCP_PROJECT_ID     = var.project_id
@@ -48,6 +49,34 @@ resource "google_vpc_access_connector" "soar_connector" {
   region        = var.region
   network       = var.spoke_network_name
   ip_cidr_range = var.connector_cidr
+}
+
+# Dedicated Service Account voor de SOAR Cloud Function
+resource "google_service_account" "soar_sa" {
+  account_id   = "soar-handler-sa-${var.environment}"
+  display_name = "SOAR Handler Service Account"
+  project      = var.project_id
+}
+
+# IAM: Logs lezen
+resource "google_project_iam_member" "soar_logging_viewer" {
+  project = var.project_id
+  role    = "roles/logging.viewer"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
+}
+
+# IAM: Firewall regels aanmaken
+resource "google_project_iam_member" "soar_compute_security_admin" {
+  project = var.project_id
+  role    = "roles/compute.securityAdmin"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
+}
+
+# IAM: Verbinding maken met Cloud SQL
+resource "google_project_iam_member" "soar_cloudsql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
 }
 
 # Geef de functie rechten om te worden aangeroepen door de monitoring alert

@@ -79,6 +79,15 @@ def handle_soar_event(request):
     })
 
     with pool.connect() as conn:
+        # Tabel automatisch aanmaken als deze nog niet bestaat
+        conn.execute(sqlalchemy.text(
+            "CREATE TABLE IF NOT EXISTS soar_logs ("
+            "  id INT AUTO_INCREMENT PRIMARY KEY,"
+            "  event_type VARCHAR(255) NOT NULL,"
+            "  event_data TEXT,"
+            "  created_at DATETIME NOT NULL"
+            ")"
+        ))
         conn.execute(
             sqlalchemy.text(
                 "INSERT INTO soar_logs (event_type, event_data, created_at) "
