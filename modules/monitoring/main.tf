@@ -46,7 +46,7 @@ resource "google_monitoring_alert_policy" "ssh_brute_force" {
 
       aggregations {
         alignment_period   = "300s"
-        per_series_aligner = "ALIGN_COUNT"
+        per_series_aligner = "ALIGN_SUM"
       }
     }
   }
