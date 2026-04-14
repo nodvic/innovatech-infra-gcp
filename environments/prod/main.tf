@@ -72,7 +72,7 @@ module "vpn" {
 resource "google_compute_instance" "test_vm" {
   name         = "soar-test-vm-prod"
   machine_type = "e2-micro"
-  zone         = "${var.region}-b"
+  zone         = "${var.region}-a"
   project      = var.project_id
 
   boot_disk {
