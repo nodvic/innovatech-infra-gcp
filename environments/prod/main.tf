@@ -68,3 +68,39 @@ module "vpn" {
   peer_gateway_ip_1 = var.peer_gateway_ip_1
   vpn_shared_secret = var.vpn_shared_secret
 }
+
+resource "google_compute_instance" "test_vm" {
+  name         = "soar-test-vm-prod"
+  machine_type = "e2-micro"
+  zone         = "europe-west1-b"
+  project      = var.project_id
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+    }
+  }
+
+  network_interface {
+    # Gebruik de output van de netwerkmodule voor consistentie
+    network    = module.network.spoke_network_name
+    subnetwork = "spoke-subnet-prod"
+
+    access_config {
+      # Noodzakelijk voor een extern IP zodat je vanaf je eigen laptop kunt SSH'en
+    }
+  }
+
+  # Installatie van de Ops Agent is essentieel voor de 'auth.log' doorstroom
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+    curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+    sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+  EOT
+
+  service_account {
+    # De VM heeft minimaal de rol 'roles/logging.logWriter' nodig
+    # 'cloud-platform' scope staat dit toe mits het Service Account de rechten heeft
+    scopes = ["cloud-platform"]
+  }
+}
