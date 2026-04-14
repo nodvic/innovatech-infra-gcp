@@ -96,7 +96,11 @@ resource "google_compute_instance" "test_vm" {
 #!/bin/bash
 sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# In Ubuntu 22.04+, sshd_config has an Include directive at the top for /etc/ssh/sshd_config.d/*.conf
+# Because of this, settings in .conf files override the main sshd_config.
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config.d/*.conf
 systemctl restart ssh
+systemctl restart sshd
 curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
 sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 EOT
