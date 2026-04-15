@@ -55,6 +55,7 @@ module "monitoring" {
   project_id                = var.project_id
   environment               = var.environment
   soar_webhook_function_url = module.soar.soar_handler_function_url
+  alert_email               = var.alert_email
 }
 
 module "vpn" {
