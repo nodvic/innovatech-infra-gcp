@@ -45,7 +45,7 @@ resource "google_monitoring_alert_policy" "ssh_brute_force" {
       threshold_value = 2
 
       aggregations {
-        alignment_period   = "300s"
+        alignment_period   = "60s"
         per_series_aligner = "ALIGN_SUM"
       }
     }
