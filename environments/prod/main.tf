@@ -58,18 +58,6 @@ module "monitoring" {
   alert_email               = var.alert_email
 }
 
-module "vpn" {
-  source = "../../modules/vpn"
-
-  project_id        = var.project_id
-  region            = var.region
-  environment       = var.environment
-  hub_network_id    = module.network.hub_network_id
-  peer_gateway_ip_0 = var.peer_gateway_ip_0
-  peer_gateway_ip_1 = var.peer_gateway_ip_1
-  vpn_shared_secret = var.vpn_shared_secret
-}
-
 resource "google_compute_instance" "test_vm" {
   name         = "soar-test-vm-prod"
   machine_type = "e2-micro"

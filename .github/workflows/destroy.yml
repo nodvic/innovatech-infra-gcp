@@ -11,8 +11,6 @@ jobs:
       TF_VAR_region: ${{ vars.GCP_REGION }}
       TF_VAR_zone: ${{ vars.GCP_ZONE }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-      TF_VAR_peer_gateway_ip_0: ${{ vars.GCP_PEER_IP_0 }}
-      TF_VAR_peer_gateway_ip_1: ${{ vars.GCP_PEER_IP_1 }}
       TF_VAR_vpn_shared_secret: ${{ secrets.VPN_SHARED_SECRET }}
       TF_VAR_alert_email: ${{ vars.GCP_ADMIN_MAIL }}
     steps:
@@ -29,7 +27,8 @@ jobs:
         working-directory: ./environments/prod
 
       - name: Destroy Apps and Database First
-        run: terraform destroy -target="module.database" -target="module.soar" -auto-approve
+        run: terraform destroy -target="module.database" -target="module.soar"
+          -auto-approve
         working-directory: ./environments/prod
         continue-on-error: true
 
