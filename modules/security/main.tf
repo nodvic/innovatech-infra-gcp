@@ -1,39 +1,3 @@
-resource "google_service_account" "soar_sa" {
-  account_id   = "innovatech-soar-sa-${var.environment}"
-  display_name = "innovatech-soar-sa-${var.environment}"
-  project      = var.project_id
-}
-
-resource "google_project_iam_member" "soar_cloudsql_client" {
-  project = var.project_id
-  role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${google_service_account.soar_sa.email}"
-}
-
-resource "google_project_iam_member" "soar_compute_security_admin" {
-  project = var.project_id
-  role    = "roles/compute.securityAdmin"
-  member  = "serviceAccount:${google_service_account.soar_sa.email}"
-}
-
-resource "google_project_iam_member" "soar_logging_writer" {
-  project = var.project_id
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.soar_sa.email}"
-}
-
-resource "google_project_iam_member" "soar_monitoring_viewer" {
-  project = var.project_id
-  role    = "roles/monitoring.viewer"
-  member  = "serviceAccount:${google_service_account.soar_sa.email}"
-}
-
-resource "google_project_iam_member" "soar_logging_viewer" {
-  project = var.project_id
-  role    = "roles/logging.viewer"
-  member  = "serviceAccount:${google_service_account.soar_sa.email}"
-}
-
 resource "google_compute_firewall" "allow_internal" {
   name    = "innovatech-fw-allow-internal-${var.environment}"
   project = var.project_id

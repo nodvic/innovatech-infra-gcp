@@ -39,16 +39,19 @@ module "dns" {
 module "soar" {
   source = "../../modules/soar"
 
-  project_id         = var.project_id
-  region             = "europe-west1"
-  zone               = var.zone
-  environment        = var.environment
-  spoke_network_name = module.network.spoke_network_name
-  hub_network_name   = module.network.hub_network_name
-  db_connection_name = module.database.instance_connection_name
-  db_name            = module.database.database_name
-  db_password        = var.db_password
+  project_id              = var.project_id
+  region                  = "europe-west1"
+  zone                    = var.zone
+  environment             = var.environment
+  spoke_network_name      = module.network.spoke_network_name
+  hub_network_name        = module.network.hub_network_name
+  db_connection_name      = module.database.instance_connection_name
+  db_name                 = module.database.database_name
+  db_password             = var.db_password
+  db_private_ip           = module.database.private_ip_address
+  invoker_service_account = "service-${data.google_project.project.number}@gcp-sa-monitoring-notification.iam.gserviceaccount.com"
 }
+
 
 module "monitoring" {
   source = "../../modules/monitoring"

@@ -189,12 +189,12 @@ resource "google_monitoring_dashboard" "main" {
           }
         },
         {
-          title = "VPN Tunnel Status"
+          title = "SOAR Functie Executies"
           xyChart = {
             dataSets = [{
               timeSeriesQuery = {
                 timeSeriesFilter = {
-                  filter = "resource.type = \"vpn_gateway\" AND metric.type = \"compute.googleapis.com/vpn/tunnel_established\""
+                  filter = "resource.type = \"cloud_function\" AND metric.type = \"cloudfunctions.googleapis.com/function/execution_count\""
                 }
               }
             }]

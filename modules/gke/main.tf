@@ -1,5 +1,6 @@
 resource "google_container_cluster" "primary" {
   name                     = "innovatech-gke-${var.environment}"
+  project                  = var.project_id
   location                 = var.zone
   network                  = var.spoke_network_id
   subnetwork               = var.gke_subnet_id
@@ -20,13 +21,16 @@ resource "google_container_cluster" "primary" {
 
 resource "google_container_node_pool" "spot_nodes" {
   name       = "spot-node-pool"
+  project    = var.project_id
   cluster    = google_container_cluster.primary.name
   location   = var.zone
   node_count = 1
 
   node_config {
-    preemptible  = true
+    spot         = true
     machine_type = "e2-medium"
+    disk_size_gb = 20
+    disk_type    = "pd-standard"
     oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
   }
 }

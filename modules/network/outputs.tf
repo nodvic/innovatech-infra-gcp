@@ -30,22 +30,18 @@ output "spoke_network_self_link" {
   value = google_compute_network.spoke.self_link
 }
 
-output "spoke_subnet_id" {
-  value = google_compute_subnetwork.spoke.id
-}
-
-output "spoke_subnet_self_link" {
-  value = google_compute_subnetwork.spoke.self_link
-}
-
-output "spoke_subnet_name" {
-  value = google_compute_subnetwork.spoke.name
-}
-
 output "private_service_connect_connection" {
   value = google_service_networking_connection.private_service_connect.id
 }
 
 output "vdi_subnet_id" {
   value = google_compute_subnetwork.vdi_subnet.id
+}
+
+output "gke_subnet_id" {
+  value = google_compute_subnetwork.gke_subnet.id
+}
+
+output "db_subnet_id" {
+  value = google_compute_subnetwork.db_subnet.id
 }

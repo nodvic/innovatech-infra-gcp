@@ -23,6 +23,6 @@ resource "google_compute_instance" "vdi_pool" {
   }
 
   service_account {
+    email  = var.service_account_email
     scopes = ["cloud-platform"]
   }
-}

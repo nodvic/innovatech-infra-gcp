@@ -15,6 +15,10 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -29,4 +33,9 @@ provider "kubernetes" {
   token                  = data.google_client_config.default.access_token
   cluster_ca_certificate = base64decode(module.gke.ca_certificate)
 }
+
 data "google_client_config" "default" {}
+
+data "google_project" "project" {
+  project_id = var.project_id
+}

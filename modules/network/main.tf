@@ -92,5 +92,6 @@ resource "google_compute_firewall" "allow_ssh_spoke" {
   }
 
   source_ranges = ["35.235.240.0/20"]
+  target_tags   = ["vdi-instance"]
   priority      = 1000
 }
