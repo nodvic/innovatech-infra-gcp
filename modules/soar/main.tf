@@ -32,13 +32,13 @@ resource "google_cloudfunctions_function" "soar_handler" {
   service_account_email = google_service_account.soar_sa.email
 
   environment_variables = {
-    GCP_PROJECT_ID     = var.project_id
-    NETWORK_NAME       = var.hub_network_name
-    DB_CONNECTION_NAME = var.db_connection_name
-    DB_NAME            = var.db_name
-    DB_USER            = var.db_user
-    DB_PASSWORD        = var.db_password
-    GCP_ZONE           = var.zone
+    GCP_PROJECT_ID = var.project_id
+    NETWORK_NAME   = var.hub_network_name
+    DB_HOST        = var.db_private_ip
+    DB_NAME        = var.db_name
+    DB_USER        = var.db_user
+    DB_PASSWORD    = var.db_password
+    GCP_ZONE       = var.zone
   }
 
   vpc_connector = google_vpc_access_connector.soar_connector.id

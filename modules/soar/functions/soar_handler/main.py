@@ -44,15 +44,16 @@ def handle_soar_event(request):
     db_user = os.environ.get("DB_USER")
     db_pass = os.environ.get("DB_PASSWORD")
     db_name = os.environ.get("DB_NAME")
-    connection_name = os.environ.get("DB_CONNECTION_NAME")
+    db_host = os.environ.get("DB_HOST")
 
     pool = sqlalchemy.create_engine(
         sqlalchemy.engine.url.URL.create(
             drivername="mysql+pymysql",
             username=db_user,
             password=db_pass,
+            host=db_host,
+            port=3306,
             database=db_name,
-            query={"unix_socket": f"/cloudsql/{connection_name}"}
         )
     )
 

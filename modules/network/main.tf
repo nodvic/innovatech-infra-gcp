@@ -21,12 +21,30 @@ resource "google_compute_network" "spoke" {
   routing_mode            = "GLOBAL"
 }
 
-resource "google_compute_subnetwork" "spoke" {
-  name                     = "innovatech-subnet-spoke-${var.environment}"
+resource "google_compute_subnetwork" "vdi_subnet" {
+  name                     = "innovatech-subnet-vdi-${var.environment}"
   project                  = var.project_id
   region                   = var.region
   network                  = google_compute_network.spoke.id
-  ip_cidr_range            = var.spoke_subnet_cidr
+  ip_cidr_range            = "10.20.1.0/24"
+  private_ip_google_access = true
+}
+
+resource "google_compute_subnetwork" "gke_subnet" {
+  name                     = "innovatech-subnet-gke-${var.environment}"
+  project                  = var.project_id
+  region                   = var.region
+  network                  = google_compute_network.spoke.id
+  ip_cidr_range            = "10.20.2.0/24"
+  private_ip_google_access = true
+}
+
+resource "google_compute_subnetwork" "db_subnet" {
+  name                     = "innovatech-subnet-db-${var.environment}"
+  project                  = var.project_id
+  region                   = var.region
+  network                  = google_compute_network.spoke.id
+  ip_cidr_range            = "10.20.3.0/24"
   private_ip_google_access = true
 }
 
@@ -63,17 +81,16 @@ resource "google_service_networking_connection" "private_service_connect" {
   depends_on              = [google_compute_network_peering.spoke_to_hub]
 }
 
-# Firewallregel om SSH-verkeer (poort 22) toe te staan naar VMs in het spoke-netwerk
 resource "google_compute_firewall" "allow_ssh_spoke" {
-  name    = "allow-ssh-spoke-${var.environment}"
+  name    = "allow-ssh-iap-spoke-${var.environment}"
   network = google_compute_network.spoke.name
   project = var.project_id
 
   allow {
     protocol = "tcp"
-    ports    = ["22"]
+    ports    = ["22", "3389"]
   }
 
-  source_ranges = ["0.0.0.0/0"]
+  source_ranges = ["35.235.240.0/20"]
   priority      = 1000
 }
