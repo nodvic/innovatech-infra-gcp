@@ -41,6 +41,7 @@ module "soar" {
 
   project_id         = var.project_id
   region             = "europe-west1"
+  zone               = var.zone
   environment        = var.environment
   spoke_network_name = module.network.spoke_network_name
   hub_network_name   = module.network.hub_network_name
@@ -58,45 +59,11 @@ module "monitoring" {
   alert_email               = var.alert_email
 }
 
-resource "google_compute_instance" "test_vm" {
-  name         = "soar-test-vm-prod"
-  machine_type = "e2-micro"
-  zone         = "${var.region}-a"
-  project      = var.project_id
-
-  boot_disk {
-    initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"
-    }
-  }
-
-  network_interface {
-    # Gebruik de output van de netwerkmodule voor consistentie
-    network    = module.network.spoke_network_name
-    subnetwork = module.network.spoke_subnet_name
-
-    access_config {
-      # Noodzakelijk voor een extern IP zodat je vanaf je eigen laptop kunt SSH'en
-    }
-  }
-
-  # Installatie van de Ops Agent is essentieel voor de 'auth.log' doorstroom
-  metadata_startup_script = <<-EOT
-#!/bin/bash
-sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-# In Ubuntu 22.04+, sshd_config has an Include directive at the top for /etc/ssh/sshd_config.d/*.conf
-# Because of this, settings in .conf files override the main sshd_config.
-sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config.d/*.conf
-systemctl restart ssh
-systemctl restart sshd
-curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
-sudo bash add-google-cloud-ops-agent-repo.sh --also-install
-EOT
-
-  service_account {
-    # De VM heeft minimaal de rol 'roles/logging.logWriter' nodig
-    # 'cloud-platform' scope staat dit toe mits het Service Account de rechten heeft
-    scopes = ["cloud-platform"]
-  }
+module "vdi" {
+  source           = "../../modules/vdi"
+  project_id       = var.project_id
+  environment      = var.environment
+  zone             = var.zone
+  spoke_network_id = module.network.spoke_network_id
+  vdi_subnet_id    = module.network.vdi_subnet_id
 }

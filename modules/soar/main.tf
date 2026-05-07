@@ -38,6 +38,7 @@ resource "google_cloudfunctions_function" "soar_handler" {
     DB_NAME            = var.db_name
     DB_USER            = var.db_user
     DB_PASSWORD        = var.db_password
+    GCP_ZONE           = var.zone
   }
 
   vpc_connector = google_vpc_access_connector.soar_connector.id
@@ -81,4 +82,10 @@ resource "google_cloudfunctions_function_iam_member" "handler_invoker" {
   cloud_function = google_cloudfunctions_function.soar_handler.name
   role           = "roles/cloudfunctions.invoker"
   member         = "allUsers" # Voor testdoeleinden
+}
+
+resource "google_project_iam_member" "soar_compute_admin" {
+  project = var.project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
 }

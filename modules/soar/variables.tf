@@ -40,3 +40,8 @@ variable "db_password" {
   type      = string
   sensitive = true
 }
+
+variable "zone" {
+  type        = string
+  description = "De Google Cloud zone waarin de resources draaien"
+}
