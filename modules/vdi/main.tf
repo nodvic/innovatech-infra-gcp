@@ -5,6 +5,8 @@ resource "google_compute_instance" "vdi_pool" {
   zone         = var.zone
   project      = var.project_id
 
+  tags = ["vdi-instance"]
+
   scheduling {
     provisioning_model = "SPOT"
     preemptible        = true
@@ -23,6 +25,6 @@ resource "google_compute_instance" "vdi_pool" {
   }
 
   service_account {
-    email  = var.service_account_email
     scopes = ["cloud-platform"]
   }
+}
