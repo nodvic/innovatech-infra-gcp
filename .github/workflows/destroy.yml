@@ -31,17 +31,21 @@ jobs:
         continue-on-error: true
 
       - name: Force Cleanup Service Networking
-        shell: bash
+        shell: pwsh
         run: |
-          echo "Forceer verwijdering van de Service Networking Peering..."
-          gcloud compute networks peerings delete servicenetworking-googleapis-com \
-            --network=innovatech-vpc-spoke-prod \
-            --project=${{ vars.GCP_PROJECT_ID }} \
-            --quiet || echo "Peering niet gevonden, we gaan door."
+          Write-Host "Forceer verwijdering van de Service Networking Peering..."
+          gcloud compute networks peerings delete servicenetworking-googleapis-com `
+            --network=innovatech-vpc-spoke-prod `
+            --project=${{ vars.GCP_PROJECT_ID }} `
+            --quiet
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Peering niet gevonden of al verwijderd. We gaan door."
+          }
+          exit 0
 
       - name: Wait for GCP Network Cleanup
-        shell: bash
-        run: sleep 60
+        shell: pwsh
+        run: Start-Sleep -Seconds 60
 
       - name: Final Terraform Destroy
         run: |
