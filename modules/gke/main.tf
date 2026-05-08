@@ -27,10 +27,8 @@ resource "google_container_node_pool" "spot_nodes" {
   node_count = 1
 
   node_config {
-    spot         = true
+    preemptible  = true
     machine_type = "e2-medium"
-    disk_size_gb = 20
-    disk_type    = "pd-standard"
     oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
   }
 }
