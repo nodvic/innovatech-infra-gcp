@@ -49,7 +49,6 @@ module "soar" {
   db_name                 = module.database.database_name
   db_password             = var.db_password
   db_private_ip           = module.database.private_ip_address
-  invoker_service_account = "service-${data.google_project.project.number}@gcp-sa-monitoring-notification.iam.gserviceaccount.com"
 }
 
 

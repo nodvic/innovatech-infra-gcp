@@ -81,9 +81,8 @@ resource "google_cloudfunctions_function_iam_member" "handler_invoker" {
   region         = var.region
   cloud_function = google_cloudfunctions_function.soar_handler.name
   role           = "roles/cloudfunctions.invoker"
-  member         = "serviceAccount:${var.invoker_service_account}"
+  member         = "allUsers"
 }
-
 
 resource "google_project_iam_member" "soar_compute_admin" {
   project = var.project_id

@@ -51,7 +51,4 @@ variable "db_private_ip" {
   description = "Het private IP-adres van de Cloud SQL-instantie"
 }
 
-variable "invoker_service_account" {
-  type        = string
-  description = "Het service account dat de SOAR function mag aanroepen (bijv. het monitoring SA)"
-}
+
