@@ -20,7 +20,7 @@ variable "hub_network_name" {
 
 variable "connector_cidr" {
   type    = string
-  default = "10.20.2.0/28"
+  default = "10.20.4.0/28"
 }
 
 variable "db_connection_name" {
