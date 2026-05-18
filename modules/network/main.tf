@@ -94,3 +94,19 @@ resource "google_compute_firewall" "allow_ssh_spoke" {
   source_ranges = ["35.235.240.0/20"]
   priority      = 1000
 }
+
+resource "google_compute_router" "spoke_router" {
+  name    = "innovatech-router-spoke-${var.environment}"
+  network = google_compute_network.spoke.name
+  region  = var.region
+  project = var.project_id
+}
+
+resource "google_compute_router_nat" "spoke_nat" {
+  name                               = "innovatech-nat-spoke-${var.environment}"
+  router                             = google_compute_router.spoke_router.name
+  region                             = var.region
+  project                            = var.project_id
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}
