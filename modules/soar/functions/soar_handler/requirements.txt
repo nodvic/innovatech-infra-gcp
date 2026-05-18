@@ -1,4 +1,4 @@
 functions-framework==3.*
 sqlalchemy==2.0.25
 pymysql==1.1.0
-google-cloud-iap==0.6.0
+google-cloud-iap==1.21.0
