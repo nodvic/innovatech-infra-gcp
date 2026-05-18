@@ -89,3 +89,9 @@ resource "google_project_iam_member" "soar_compute_admin" {
   role    = "roles/compute.instanceAdmin.v1"
   member  = "serviceAccount:${google_service_account.soar_sa.email}"
 }
+
+resource "google_project_iam_member" "soar_iap_admin" {
+  project = var.project_id
+  role    = "roles/iap.admin"
+  member  = "serviceAccount:${google_service_account.soar_sa.email}"
+}
