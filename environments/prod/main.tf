@@ -39,16 +39,16 @@ module "dns" {
 module "soar" {
   source = "../../modules/soar"
 
-  project_id              = var.project_id
-  region                  = "europe-west1"
-  zone                    = var.zone
-  environment             = var.environment
-  spoke_network_name      = module.network.spoke_network_name
-  hub_network_name        = module.network.hub_network_name
-  db_connection_name      = module.database.instance_connection_name
-  db_name                 = module.database.database_name
-  db_password             = var.db_password
-  db_private_ip           = module.database.private_ip_address
+  project_id         = var.project_id
+  region             = "europe-west1"
+  zone               = var.zone
+  environment        = var.environment
+  spoke_network_name = module.network.spoke_network_name
+  hub_network_name   = module.network.hub_network_name
+  db_connection_name = module.database.instance_connection_name
+  db_name            = module.database.database_name
+  db_password        = var.db_password
+  db_private_ip      = module.database.private_ip_address
 }
 
 
@@ -77,52 +77,4 @@ module "gke" {
   zone             = var.zone
   spoke_network_id = module.network.spoke_network_id
   gke_subnet_id    = module.network.gke_subnet_id
-}
-
-resource "kubernetes_deployment" "hr_portal" {
-  depends_on = [module.gke]
-  metadata {
-    name = "hr-portal"
-  }
-  spec {
-    replicas = 1
-    selector {
-      match_labels = {
-        app = "hr-portal"
-      }
-    }
-    template {
-      metadata {
-        labels = {
-          app = "hr-portal"
-        }
-      }
-      spec {
-        container {
-          image = "nginxdemos/hello"
-          name  = "hr-portal-container"
-          port {
-            container_port = 80
-          }
-        }
-      }
-    }
-  }
-}
-
-resource "kubernetes_service" "hr_portal_svc" {
-  depends_on = [kubernetes_deployment.hr_portal]
-  metadata {
-    name = "hr-portal-svc"
-  }
-  spec {
-    selector = {
-      app = "hr-portal"
-    }
-    port {
-      port        = 80
-      target_port = 80
-    }
-    type = "ClusterIP"
-  }
 }
