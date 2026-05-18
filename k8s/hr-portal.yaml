@@ -86,6 +86,10 @@ spec:
         app: hr-portal
     spec:
       tolerations:
+      - key: "instance_type"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
       - key: "cloud.google.com/gke-spot"
         operator: "Equal"
         value: "true"
