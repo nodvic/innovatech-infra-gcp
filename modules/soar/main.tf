@@ -45,11 +45,13 @@ resource "google_cloudfunctions_function" "soar_handler" {
 }
 
 resource "google_vpc_access_connector" "soar_connector" {
-  name          = "innovatech-soar-conn-${var.environment}"
-  project       = var.project_id
-  region        = var.region
-  network       = var.spoke_network_name
-  ip_cidr_range = var.connector_cidr
+  name           = "innovatech-soar-conn-${var.environment}"
+  project        = var.project_id
+  region         = var.region
+  network        = var.spoke_network_name
+  ip_cidr_range  = var.connector_cidr
+  min_throughput = 200
+  max_throughput = 300
 }
 
 resource "google_service_account" "soar_sa" {
