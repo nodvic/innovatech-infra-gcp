@@ -85,6 +85,11 @@ spec:
       labels:
         app: hr-portal
     spec:
+      tolerations:
+      - key: "cloud.google.com/gke-spot"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
       - name: nginx
         image: nginx:stable-alpine
