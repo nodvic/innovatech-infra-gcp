@@ -25,6 +25,12 @@ jobs:
         run: terraform init
         working-directory: ./environments/prod
 
+      - name: Remove old Kubernetes resources from state
+        run: |
+          terraform state rm kubernetes_deployment.hr_portal || true
+          terraform state rm kubernetes_service.hr_portal_svc || true
+        working-directory: ./environments/prod
+
       - name: Terraform Plan
         run: terraform plan
         working-directory: ./environments/prod
