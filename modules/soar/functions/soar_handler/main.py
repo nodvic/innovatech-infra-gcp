@@ -2,6 +2,7 @@ import os
 import json
 import sqlalchemy
 from google.cloud import iap_v1
+from google.iam.v1 import iam_policy_pb2, policy_pb2
 
 def handle_soar_event(request):
     request_json = request.get_json(silent=True)
@@ -22,7 +23,10 @@ def handle_soar_event(request):
     resource = f"projects/{project_id}/iap_tunnel/zones/{zone}/instances/{vdi_name}"
     
     try:
-        policy = client.get_iam_policy(resource=resource)
+        # Bundel de parameters in een request object
+        get_request = iam_policy_pb2.GetIamPolicyRequest(resource=resource)
+        policy = client.get_iam_policy(request=get_request)
+        
         member = f"user:{user_email}"
         role = "roles/iap.tunnelResourceAccessor"
 
@@ -35,14 +39,18 @@ def handle_soar_event(request):
                     binding_exists = True
                     break
             if not binding_exists:
-                policy.bindings.append({"role": role, "members": [member]})
+                # Maak een expliciet Binding object aan
+                new_binding = policy_pb2.Binding(role=role, members=[member])
+                policy.bindings.append(new_binding)
         
         elif action == "revoke":
             for b in policy.bindings:
                 if b.role == role and member in b.members:
                     b.members.remove(member)
 
-        client.set_iam_policy(resource=resource, policy=policy)
+        # Bundel de update in een request object
+        set_request = iam_policy_pb2.SetIamPolicyRequest(resource=resource, policy=policy)
+        client.set_iam_policy(request=set_request)
 
     except Exception as e:
         return {"status": "error", "message": f"IAP IAM fout: {str(e)}"}, 500
