@@ -12,6 +12,7 @@ resource "google_container_cluster" "primary" {
     enabled  = true
     provider = "CALICO"
   }
+
   addons_config {
     network_policy_config {
       disabled = false
@@ -20,17 +21,34 @@ resource "google_container_cluster" "primary" {
 }
 
 resource "google_container_node_pool" "spot_nodes" {
-  name       = "spot-node-pool"
-  project    = var.project_id
-  cluster    = google_container_cluster.primary.name
-  location   = var.zone
-  node_count = 1
+  name               = "spot-node-pool"
+  project            = var.project_id
+  cluster            = google_container_cluster.primary.name
+  location           = var.zone
+  initial_node_count = 1
+
+  autoscaling {
+    min_node_count = 1
+    max_node_count = 3
+  }
 
   node_config {
     spot         = true
     machine_type = "e2-medium"
     disk_size_gb = 20
     disk_type    = "pd-standard"
-    oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    labels = {
+      env = var.environment
+    }
+
+    taint {
+      key    = "instance_type"
+      value  = "spot"
+      effect = "NO_SCHEDULE"
+    }
   }
 }
