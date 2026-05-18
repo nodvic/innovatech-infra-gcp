@@ -43,8 +43,16 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: ./environments/prod
 
+      - name: Install GKE Auth Plugin
+        shell: powershell
+        run: |
+          gcloud components install gke-gcloud-auth-plugin --quiet
+        continue-on-error: true
+
       - name: Deploy HR Portal to GKE
         shell: powershell
+        env:
+          USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
         run: |
           Write-Host "Koppelen aan het GKE cluster..."
           gcloud container clusters get-credentials innovatech-gke-prod --zone $env:TF_VAR_zone --project $env:TF_VAR_project_id
