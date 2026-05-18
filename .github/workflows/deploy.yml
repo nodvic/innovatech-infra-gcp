@@ -26,6 +26,7 @@ jobs:
         working-directory: ./environments/prod
 
       - name: Remove old Kubernetes resources from state
+        shell: bash
         run: |
           terraform state rm kubernetes_deployment.hr_portal || true
           terraform state rm kubernetes_service.hr_portal_svc || true
