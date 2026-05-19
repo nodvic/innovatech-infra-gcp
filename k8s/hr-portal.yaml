@@ -475,7 +475,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: frontend
-        image: nginx:stable-alpine
+        image: nginx:stable
         ports:
         - containerPort: 80
         resources:
