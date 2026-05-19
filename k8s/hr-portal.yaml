@@ -161,7 +161,7 @@ metadata:
   name: nginx-config
   namespace: default
 data:
-  default.conf: |
+  default.conf.template: |
     server {
         listen 80;
         location / {
@@ -169,7 +169,7 @@ data:
             index index.html;
         }
         location /api/ {
-            proxy_pass http://backend-service.default.svc.cluster.local:5000/api/;
+            proxy_pass http://${BACKEND_SERVICE_SERVICE_HOST}:${BACKEND_SERVICE_SERVICE_PORT}/api/;
         }
     }
 ---
@@ -489,7 +489,7 @@ spec:
         - name: html-volume
           mountPath: /usr/share/nginx/html
         - name: nginx-config-volume
-          mountPath: /etc/nginx/conf.d
+          mountPath: /etc/nginx/templates
       volumes:
       - name: html-volume
         configMap:
