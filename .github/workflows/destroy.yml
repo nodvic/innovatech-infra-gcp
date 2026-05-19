@@ -11,7 +11,6 @@ jobs:
       TF_VAR_region: ${{ vars.GCP_REGION }}
       TF_VAR_zone: ${{ vars.GCP_ZONE }}
       TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-      TF_VAR_alert_email: ${{ vars.GCP_ADMIN_MAIL }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,18 +24,17 @@ jobs:
         run: terraform init
         working-directory: ./environments/prod
 
-      - name: Destroy Apps and Database First
-        run: terraform destroy -target="module.database" -target="module.soar" -auto-approve
+      - name: Destroy Database First
+        run: terraform destroy -target="module.database" -auto-approve
         working-directory: ./environments/prod
         continue-on-error: true
 
       - name: Force Cleanup Service Networking
         shell: powershell
         run: |
-          Write-Host "Forceer verwijdering van de Service Networking Peering..."
           gcloud compute networks peerings delete servicenetworking-googleapis-com --network=innovatech-vpc-spoke-prod --project=$env:TF_VAR_project_id --quiet
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "Peering niet gevonden of al verwijderd. We gaan door."
+            Write-Host "Peering niet gevonden, we gaan door."
           }
           exit 0
 

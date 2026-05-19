@@ -36,40 +36,6 @@ module "dns" {
   database_private_ip = module.database.private_ip_address
 }
 
-module "soar" {
-  source = "../../modules/soar"
-
-  project_id         = var.project_id
-  region             = "europe-west1"
-  zone               = var.zone
-  environment        = var.environment
-  spoke_network_name = module.network.spoke_network_name
-  hub_network_name   = module.network.hub_network_name
-  db_connection_name = module.database.instance_connection_name
-  db_name            = module.database.database_name
-  db_password        = var.db_password
-  db_private_ip      = module.database.private_ip_address
-}
-
-
-module "monitoring" {
-  source = "../../modules/monitoring"
-
-  project_id                = var.project_id
-  environment               = var.environment
-  soar_webhook_function_url = module.soar.soar_handler_function_url
-  alert_email               = var.alert_email
-}
-
-module "vdi" {
-  source           = "../../modules/vdi"
-  project_id       = var.project_id
-  environment      = var.environment
-  zone             = var.zone
-  spoke_network_id = module.network.spoke_network_id
-  vdi_subnet_id    = module.network.vdi_subnet_id
-}
-
 module "gke" {
   source           = "../../modules/gke"
   project_id       = var.project_id

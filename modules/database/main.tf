@@ -1,5 +1,5 @@
 resource "google_sql_database_instance" "main" {
-  name                = "innovatech-sql-instance-${var.environment}-v2"
+  name                = "innovatech-sql-instance-${var.environment}-v3"
   project             = var.project_id
   region              = var.region
   database_version    = var.database_version

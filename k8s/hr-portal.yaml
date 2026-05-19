@@ -1,7 +1,176 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: hr-portal-html
+  name: backend-code
+  namespace: default
+data:
+  main.py: |
+    from flask import Flask, request, jsonify, session
+    from functools import wraps
+    import pymysql
+    import hashlib
+    import os
+
+    app = Flask(__name__)
+    app.secret_key = 'innovatech-portal-secret-2024'
+
+    def get_connection():
+        return pymysql.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASSWORD'],
+            database=os.environ['DB_NAME'],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+    def hash_password(pw):
+        return hashlib.sha256(pw.encode()).hexdigest()
+
+    def init_db():
+        conn = get_connection()
+        with conn.cursor() as c:
+            c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(100) NOT NULL UNIQUE, email VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'medewerker', password VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'active')")
+            c.execute("SELECT COUNT(*) as cnt FROM employees")
+            if c.fetchone()['cnt'] == 0:
+                c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('admin', 'admin@innovatech.nl', 'admin', hash_password('Admin@2024'), 'active'))
+                c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('hr_medewerker', 'hr@innovatech.nl', 'hr', hash_password('Hr@2024'), 'active'))
+            conn.commit()
+        conn.close()
+
+    def login_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if 'user_id' not in session:
+                return jsonify({'error': 'Niet ingelogd'}), 401
+            return f(*args, **kwargs)
+        return wrapper
+
+    def hr_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if 'user_id' not in session:
+                return jsonify({'error': 'Niet ingelogd'}), 401
+            if session.get('role') not in ['admin', 'hr']:
+                return jsonify({'error': 'Geen toegang'}), 403
+            return f(*args, **kwargs)
+        return wrapper
+
+    def admin_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if 'user_id' not in session:
+                return jsonify({'error': 'Niet ingelogd'}), 401
+            if session.get('role') != 'admin':
+                return jsonify({'error': 'Geen toegang'}), 403
+            return f(*args, **kwargs)
+        return wrapper
+
+    @app.route('/api/health')
+    def health():
+        return jsonify({'status': 'ok'})
+
+    @app.route('/api/login', methods=['POST'])
+    def login():
+        data = request.get_json()
+        conn = get_connection()
+        with conn.cursor() as c:
+            c.execute('SELECT employee_id, username, role FROM employees WHERE username=%s AND password=%s AND status=%s', (data['username'], hash_password(data['password']), 'active'))
+            user = c.fetchone()
+        conn.close()
+        if not user:
+            return jsonify({'error': 'Ongeldige inloggegevens'}), 401
+        session['user_id'] = user['employee_id']
+        session['username'] = user['username']
+        session['role'] = user['role']
+        return jsonify({'username': user['username'], 'role': user['role']})
+
+    @app.route('/api/logout', methods=['POST'])
+    def logout():
+        session.clear()
+        return jsonify({'message': 'ok'})
+
+    @app.route('/api/me')
+    @login_required
+    def me():
+        return jsonify({'username': session['username'], 'role': session['role']})
+
+    @app.route('/api/employees')
+    @login_required
+    def list_employees():
+        conn = get_connection()
+        with conn.cursor() as c:
+            if session['role'] in ['admin', 'hr']:
+                c.execute('SELECT employee_id, username, email, role, status FROM employees ORDER BY employee_id')
+            else:
+                c.execute('SELECT employee_id, username, email, role, status FROM employees WHERE employee_id=%s', (session['user_id'],))
+            result = c.fetchall()
+        conn.close()
+        return jsonify(result)
+
+    @app.route('/api/employees', methods=['POST'])
+    @hr_required
+    def add_employee():
+        data = request.get_json()
+        conn = get_connection()
+        with conn.cursor() as c:
+            c.execute('INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)', (data['username'], data['email'], data['role'], hash_password(data['password']), data['status']))
+            conn.commit()
+        conn.close()
+        return jsonify({'message': 'ok'}), 201
+
+    @app.route('/api/employees/<int:eid>', methods=['PUT'])
+    @hr_required
+    def update_employee(eid):
+        data = request.get_json()
+        conn = get_connection()
+        with conn.cursor() as c:
+            c.execute('UPDATE employees SET email=%s, role=%s, status=%s WHERE employee_id=%s', (data['email'], data['role'], data['status'], eid))
+            conn.commit()
+        conn.close()
+        return jsonify({'message': 'ok'})
+
+    @app.route('/api/employees/<int:eid>', methods=['DELETE'])
+    @admin_required
+    def remove_employee(eid):
+        if eid == session['user_id']:
+            return jsonify({'error': 'Kan eigen account niet verwijderen'}), 400
+        conn = get_connection()
+        with conn.cursor() as c:
+            c.execute('DELETE FROM employees WHERE employee_id=%s', (eid,))
+            conn.commit()
+        conn.close()
+        return jsonify({'message': 'ok'})
+
+    with app.app_context():
+        init_db()
+
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=5000)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+        location /api {
+            proxy_pass http://backend-service:5000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-html
   namespace: default
 data:
   index.html: |
@@ -9,63 +178,206 @@ data:
     <html lang="nl">
     <head>
         <meta charset="UTF-8">
-        <title>Innovatech HR Portal</title>
+        <title>Innovatech HR Portaal</title>
         <style>
-            body { font-family: sans-serif; margin: 40px; background-color: #f4f4f4; }
-            .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 400px; }
-            input, select, button { display: block; width: 100%; margin-bottom: 15px; padding: 10px; box-sizing: border-box; }
-            button { background-color: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; }
-            #status { padding: 10px; border-radius: 4px; display: none; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+            .navbar { background: #1a73e8; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+            .navbar h1 { font-size: 20px; }
+            .navbar span { font-size: 14px; opacity: 0.9; }
+            #logout-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+            .container { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+            .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 24px; }
+            .card h2 { margin-bottom: 16px; color: #333; }
+            input, select { width: 100%; padding: 10px; margin: 6px 0 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+            .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+            .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 4px; }
+            .btn-primary { background: #1a73e8; color: white; }
+            .btn-danger { background: #dc3545; color: white; }
+            .btn-warning { background: #f59e0b; color: white; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+            th { background: #f8f9fa; font-weight: 600; color: #555; }
+            .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+            .badge-admin { background: #fee2e2; color: #dc2626; }
+            .badge-hr { background: #dbeafe; color: #1d4ed8; }
+            .badge-medewerker { background: #dcfce7; color: #16a34a; }
+            .badge-active { background: #dcfce7; color: #16a34a; }
+            .badge-inactive { background: #f3f4f6; color: #6b7280; }
+            .role-info { background: #eff6ff; border-left: 4px solid #1a73e8; padding: 12px; margin-bottom: 16px; border-radius: 0 4px 4px 0; font-size: 13px; }
+            #login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1a73e8, #0d47a1); }
+            .login-card { background: white; padding: 40px; border-radius: 12px; width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+            .login-card h2 { text-align: center; color: #1a73e8; margin-bottom: 24px; }
+            .error-msg { color: #dc3545; font-size: 13px; margin-top: 8px; text-align: center; }
         </style>
     </head>
     <body>
-        <div class="container">
-            <h2>Medewerker Onboarding</h2>
-            <input type="email" id="email" placeholder="E-mailadres medewerker" required>
-            <select id="vdi">
-                <option value="innovatech-vdi-01-prod">VDI Pool 01</option>
-                <option value="innovatech-vdi-02-prod">VDI Pool 02</option>
-            </select>
-            <button onclick="onboardUser()">Onboard Medewerker</button>
-            <div id="status"></div>
+        <div id="login-page">
+            <div class="login-card">
+                <h2>Innovatech HR Portaal</h2>
+                <input type="text" id="login-username" placeholder="Gebruikersnaam">
+                <input type="password" id="login-password" placeholder="Wachtwoord">
+                <button class="btn btn-primary" onclick="doLogin()">Inloggen</button>
+                <div id="login-error" class="error-msg"></div>
+            </div>
+        </div>
+
+        <div id="app-page" style="display:none">
+            <div class="navbar">
+                <h1>Innovatech HR Portaal</h1>
+                <div>
+                    <span id="nav-user"></span>
+                    <button id="logout-btn" onclick="doLogout()">Uitloggen</button>
+                </div>
+            </div>
+            <div class="container">
+                <div id="add-form" class="card" style="display:none">
+                    <h2>Medewerker Toevoegen</h2>
+                    <div class="form-grid">
+                        <div>
+                            <input type="text" id="f-username" placeholder="Gebruikersnaam">
+                            <input type="email" id="f-email" placeholder="E-mailadres">
+                        </div>
+                        <div>
+                            <select id="f-role">
+                                <option value="medewerker">Medewerker</option>
+                                <option value="hr">HR Medewerker</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <input type="password" id="f-password" placeholder="Wachtwoord">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addEmployee()">Toevoegen</button>
+                </div>
+                <div class="card">
+                    <h2>Medewerkers</h2>
+                    <div id="role-info" class="role-info"></div>
+                    <table>
+                        <thead><tr><th>ID</th><th>Naam</th><th>Email</th><th>Rol</th><th>Status</th><th id="actions-header"></th></tr></thead>
+                        <tbody id="employee-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="edit-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+            <div style="background:white; padding:32px; border-radius:8px; width:400px;">
+                <h2 style="margin-bottom:16px;">Medewerker Bewerken</h2>
+                <input type="hidden" id="edit-id">
+                <input type="email" id="edit-email" placeholder="E-mailadres">
+                <select id="edit-role">
+                    <option value="medewerker">Medewerker</option>
+                    <option value="hr">HR Medewerker</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <select id="edit-status">
+                    <option value="active">Actief</option>
+                    <option value="inactive">Inactief</option>
+                </select>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+                    <button class="btn btn-primary" onclick="saveEdit()">Opslaan</button>
+                    <button class="btn" style="background:#6c757d; color:white;" onclick="closeEdit()">Annuleren</button>
+                </div>
+            </div>
         </div>
 
         <script>
-            async function onboardUser() {
-                const email = document.getElementById('email').value;
-                const vdi = document.getElementById('vdi').value;
-                const statusDiv = document.getElementById('status');
-                const url = 'https://europe-west1-innovatech-infra-491409.cloudfunctions.net/innovatech-soar-handler-prod';
+            var currentRole = '';
 
-                statusDiv.style.display = 'block';
-                statusDiv.style.backgroundColor = '#e8f0fe';
-                statusDiv.innerText = 'Verwerken...';
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'assign',
-                            user_email: email,
-                            vdi_name: vdi
-                        })
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        statusDiv.style.backgroundColor = '#d4edda';
-                        statusDiv.innerText = 'Succes: Gebruiker toegevoegd en gelogd.';
-                    } else {
-                        statusDiv.style.backgroundColor = '#f8d7da';
-                        statusDiv.innerText = 'Fout: ' + result.message;
-                    }
-                } catch (error) {
-                    statusDiv.style.backgroundColor = '#f8d7da';
-                    statusDiv.innerText = 'Netwerkfout: Kan de automatiseringslaag niet bereiken.';
+            async function doLogin() {
+                var res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: document.getElementById('login-username').value, password: document.getElementById('login-password').value})
+                });
+                var data = await res.json();
+                if (!res.ok) {
+                    document.getElementById('login-error').innerText = data.error;
+                    return;
                 }
+                currentRole = data.role;
+                showApp(data.username, data.role);
+                loadEmployees();
             }
+
+            function showApp(username, role) {
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('app-page').style.display = 'block';
+                document.getElementById('nav-user').innerText = username + ' (' + role + ')  ';
+                if (role === 'admin' || role === 'hr') {
+                    document.getElementById('add-form').style.display = 'block';
+                    document.getElementById('actions-header').innerText = 'Acties';
+                }
+                var info = {admin: 'Admin: kan alle medewerkers zien, toevoegen, bewerken en verwijderen.', hr: 'HR: kan alle medewerkers zien, toevoegen en bewerken. Verwijderen alleen door admin.', medewerker: 'Medewerker: je ziet alleen je eigen profiel.'};
+                document.getElementById('role-info').innerText = info[role] || '';
+            }
+
+            async function doLogout() {
+                await fetch('/api/logout', {method: 'POST'});
+                location.reload();
+            }
+
+            async function loadEmployees() {
+                var res = await fetch('/api/employees');
+                var data = await res.json();
+                var rows = data.map(function(e) {
+                    var roleBadge = '<span class="badge badge-' + e.role + '">' + e.role + '</span>';
+                    var statusBadge = '<span class="badge badge-' + e.status + '">' + (e.status === 'active' ? 'Actief' : 'Inactief') + '</span>';
+                    var actions = '';
+                    if (currentRole === 'admin' || currentRole === 'hr') {
+                        actions += '<button class="btn btn-warning" style="width:auto; margin-right:4px;" onclick="openEdit(' + e.employee_id + ',\'' + e.email + '\',\'' + e.role + '\',\'' + e.status + '\')">Bewerken</button>';
+                    }
+                    if (currentRole === 'admin') {
+                        actions += '<button class="btn btn-danger" style="width:auto;" onclick="deleteEmployee(' + e.employee_id + ')">Verwijder</button>';
+                    }
+                    return '<tr><td>' + e.employee_id + '</td><td>' + e.username + '</td><td>' + e.email + '</td><td>' + roleBadge + '</td><td>' + statusBadge + '</td><td>' + actions + '</td></tr>';
+                });
+                document.getElementById('employee-list').innerHTML = rows.join('');
+            }
+
+            async function addEmployee() {
+                await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: document.getElementById('f-username').value, email: document.getElementById('f-email').value, role: document.getElementById('f-role').value, password: document.getElementById('f-password').value, status: 'active'})
+                });
+                loadEmployees();
+            }
+
+            function openEdit(id, email, role, status) {
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-email').value = email;
+                document.getElementById('edit-role').value = role;
+                document.getElementById('edit-status').value = status;
+                document.getElementById('edit-modal').style.display = 'flex';
+            }
+
+            function closeEdit() {
+                document.getElementById('edit-modal').style.display = 'none';
+            }
+
+            async function saveEdit() {
+                var id = document.getElementById('edit-id').value;
+                await fetch('/api/employees/' + id, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: document.getElementById('edit-email').value, role: document.getElementById('edit-role').value, status: document.getElementById('edit-status').value})
+                });
+                closeEdit();
+                loadEmployees();
+            }
+
+            async function deleteEmployee(id) {
+                if (!confirm('Weet je zeker dat je deze medewerker wilt verwijderen?')) return;
+                await fetch('/api/employees/' + id, {method: 'DELETE'});
+                loadEmployees();
+            }
+
+            fetch('/api/me').then(function(r) {
+                if (r.ok) return r.json();
+            }).then(function(data) {
+                if (data) { currentRole = data.role; showApp(data.username, data.role); loadEmployees(); }
+            });
         </script>
     </body>
     </html>
@@ -73,17 +385,17 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hr-portal-deployment
+  name: backend-deployment
   namespace: default
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: hr-portal
+      app: backend
   template:
     metadata:
       labels:
-        app: hr-portal
+        app: backend
     spec:
       tolerations:
       - key: "instance_type"
@@ -95,14 +407,86 @@ spec:
         value: "true"
         effect: "NoSchedule"
       containers:
-      - name: nginx
+      - name: backend
+        image: python:3.11-alpine
+        command: ["sh", "-c", "pip install flask pymysql cryptography --quiet && python /app/main.py"]
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - secretRef:
+            name: db-credentials
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+      volumes:
+      - name: app-code
+        configMap:
+          name: backend-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: default
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      tolerations:
+      - key: "instance_type"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+      - key: "cloud.google.com/gke-spot"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: frontend
         image: nginx:stable-alpine
         ports:
         - containerPort: 80
         volumeMounts:
         - name: html-volume
           mountPath: /usr/share/nginx/html
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d
       volumes:
       - name: html-volume
         configMap:
-          name: hr-portal-html
+          name: frontend-html
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: default
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer

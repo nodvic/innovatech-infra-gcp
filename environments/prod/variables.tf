@@ -19,8 +19,3 @@ variable "db_password" {
   type      = string
   sensitive = true
 }
-
-variable "alert_email" {
-  type        = string
-  description = "Het e-mailadres voor security alerts"
-}
