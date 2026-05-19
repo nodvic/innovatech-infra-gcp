@@ -34,7 +34,9 @@ output "private_service_connect_connection" {
   value = google_service_networking_connection.private_service_connect.id
 }
 
-
+output "vdi_subnet_id" {
+  value = google_compute_subnetwork.vdi_subnet.id
+}
 
 output "gke_subnet_id" {
   value = google_compute_subnetwork.gke_subnet.id

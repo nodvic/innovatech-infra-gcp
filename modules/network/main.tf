@@ -21,6 +21,15 @@ resource "google_compute_network" "spoke" {
   routing_mode            = "GLOBAL"
 }
 
+resource "google_compute_subnetwork" "vdi_subnet" {
+  name                     = "innovatech-subnet-vdi-${var.environment}"
+  project                  = var.project_id
+  region                   = var.region
+  network                  = google_compute_network.spoke.id
+  ip_cidr_range            = "10.20.1.0/24"
+  private_ip_google_access = true
+}
+
 resource "google_compute_subnetwork" "gke_subnet" {
   name                     = "innovatech-subnet-gke-${var.environment}"
   project                  = var.project_id
@@ -28,18 +37,7 @@ resource "google_compute_subnetwork" "gke_subnet" {
   network                  = google_compute_network.spoke.id
   ip_cidr_range            = "10.20.2.0/24"
   private_ip_google_access = true
-
-  secondary_ip_range {
-    range_name    = "gke-pods"
-    ip_cidr_range = "10.30.0.0/16"
-  }
-
-  secondary_ip_range {
-    range_name    = "gke-services"
-    ip_cidr_range = "10.31.0.0/20"
-  }
 }
-
 
 resource "google_compute_subnetwork" "db_subnet" {
   name                     = "innovatech-subnet-db-${var.environment}"

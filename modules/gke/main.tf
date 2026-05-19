@@ -8,11 +8,6 @@ resource "google_container_cluster" "primary" {
   initial_node_count       = 1
   deletion_protection      = false
 
-  ip_allocation_policy {
-    cluster_secondary_range_name  = "gke-pods"
-    services_secondary_range_name = "gke-services"
-  }
-
   network_policy {
     enabled  = true
     provider = "CALICO"

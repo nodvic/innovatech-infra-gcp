@@ -27,15 +27,23 @@ data:
         return hashlib.sha256(pw.encode()).hexdigest()
 
     def init_db():
-        conn = get_connection()
-        with conn.cursor() as c:
-            c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(100) NOT NULL UNIQUE, email VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'medewerker', password VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'active')")
-            c.execute("SELECT COUNT(*) as cnt FROM employees")
-            if c.fetchone()['cnt'] == 0:
-                c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('admin', 'admin@innovatech.nl', 'admin', hash_password('Admin@2024'), 'active'))
-                c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('hr_medewerker', 'hr@innovatech.nl', 'hr', hash_password('Hr@2024'), 'active'))
-            conn.commit()
-        conn.close()
+        import time
+        for attempt in range(20):
+            try:
+                conn = get_connection()
+                with conn.cursor() as c:
+                    c.execute("CREATE TABLE IF NOT EXISTS employees (employee_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(100) NOT NULL UNIQUE, email VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL DEFAULT 'medewerker', password VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'active')")
+                    c.execute("SELECT COUNT(*) as cnt FROM employees")
+                    if c.fetchone()['cnt'] == 0:
+                        c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('admin', 'admin@innovatech.nl', 'admin', hash_password('Admin@2024'), 'active'))
+                        c.execute("INSERT INTO employees (username, email, role, password, status) VALUES (%s, %s, %s, %s, %s)", ('hr_medewerker', 'hr@innovatech.nl', 'hr', hash_password('Hr@2024'), 'active'))
+                    conn.commit()
+                conn.close()
+                return
+            except Exception:
+                if attempt == 19:
+                    raise
+                time.sleep(10)
 
     def login_required(f):
         @wraps(f)
@@ -160,10 +168,8 @@ data:
             root /usr/share/nginx/html;
             index index.html;
         }
-        location /api {
-            proxy_pass http://backend-service:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
+        location /api/ {
+            proxy_pass http://backend-service:5000/api/;
         }
     }
 ---
@@ -408,13 +414,20 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: backend
-        image: python:3.11-alpine
+        image: python:3.11-slim
         command: ["sh", "-c", "pip install flask pymysql cryptography --quiet && python /app/main.py"]
         ports:
         - containerPort: 5000
         envFrom:
         - secretRef:
             name: db-credentials
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
         volumeMounts:
         - name: app-code
           mountPath: /app
@@ -465,6 +478,13 @@ spec:
         image: nginx:stable-alpine
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
         volumeMounts:
         - name: html-volume
           mountPath: /usr/share/nginx/html
