@@ -37,6 +37,16 @@ resource "google_compute_subnetwork" "gke_subnet" {
   network                  = google_compute_network.spoke.id
   ip_cidr_range            = "10.20.2.0/24"
   private_ip_google_access = true
+
+  secondary_ip_range {
+    range_name    = "gke-pods"
+    ip_cidr_range = "10.30.0.0/16"
+  }
+
+  secondary_ip_range {
+    range_name    = "gke-services"
+    ip_cidr_range = "10.31.0.0/20"
+  }
 }
 
 resource "google_compute_subnetwork" "db_subnet" {

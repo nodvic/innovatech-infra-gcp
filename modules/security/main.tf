@@ -71,6 +71,34 @@ resource "google_compute_firewall" "spoke_allow_internal" {
   priority      = 1000
 }
 
+resource "google_compute_firewall" "spoke_allow_http" {
+  name    = "innovatech-fw-spoke-allow-http-${var.environment}"
+  project = var.project_id
+  network = var.spoke_network_name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  priority      = 1000
+}
+
+resource "google_compute_firewall" "spoke_allow_health_checks" {
+  name    = "innovatech-fw-spoke-allow-healthcheck-${var.environment}"
+  project = var.project_id
+  network = var.spoke_network_name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80", "443", "10256"]
+  }
+
+  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  priority      = 1000
+}
+
 resource "google_compute_firewall" "spoke_deny_all_ingress" {
   name    = "innovatech-fw-spoke-deny-all-${var.environment}"
   project = var.project_id
