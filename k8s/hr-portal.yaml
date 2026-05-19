@@ -169,7 +169,7 @@ data:
             index index.html;
         }
         location /api/ {
-            proxy_pass http://backend-service:5000/api/;
+            proxy_pass http://backend-service.default.svc.cluster.local:5000/api/;
         }
     }
 ---
