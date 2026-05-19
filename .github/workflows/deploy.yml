@@ -32,10 +32,51 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: ./environments/prod
 
-      - name: Show SQL Private IP
+      - name: Configure kubectl without plugin
+        shell: powershell
+        working-directory: ./environments/prod
+        run: |
+          $endpoint = terraform output -raw gke_endpoint
+          $ca_b64   = terraform output -raw gke_ca_cert
+          $token    = gcloud auth print-access-token
+
+          $ca_bytes = [System.Convert]::FromBase64String($ca_b64)
+          [System.IO.File]::WriteAllBytes("$PWD\ca.crt", $ca_bytes)
+
+          kubectl config set-cluster innovatech-gke --server=https://$endpoint --certificate-authority="$PWD\ca.crt" --embed-certs=true
+          kubectl config set-credentials innovatech-user --token=$token
+          kubectl config set-context innovatech-ctx --cluster=innovatech-gke --user=innovatech-user
+          kubectl config use-context innovatech-ctx
+
+          Remove-Item "$PWD\ca.crt"
+
+      - name: Create or update database secret
+        shell: powershell
+        working-directory: ./environments/prod
+        run: |
+          $sql_ip = terraform output -raw db_private_ip
+          kubectl create secret generic db-credentials `
+            --from-literal=DB_HOST=$sql_ip `
+            --from-literal=DB_USER=innovatech-admin `
+            --from-literal=DB_PASSWORD=$env:TF_VAR_db_password `
+            --from-literal=DB_NAME=innovatech-db-prod `
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy HR Portal
+        run: kubectl apply -f k8s/hr-portal.yaml
+
+      - name: Wait for LoadBalancer IP
         shell: powershell
         run: |
-          Write-Host "=== KOPIEER DIT IP VOOR KUBECTL ==="
-          terraform output -raw db_private_ip
-          Write-Host "==================================="
-        working-directory: ./environments/prod
+          Write-Host "Wachten op publiek IP..."
+          $ip = ""
+          for ($i = 0; $i -lt 30; $i++) {
+            $ip = kubectl get service frontend-service -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2>$null
+            if ($ip) { break }
+            Start-Sleep -Seconds 10
+          }
+          if ($ip) {
+            Write-Host "=== HR PORTAL BEREIKBAAR OP: http://$ip ==="
+          } else {
+            Write-Host "LoadBalancer IP nog niet beschikbaar. Controleer later met: kubectl get service frontend-service"
+          }
