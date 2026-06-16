@@ -415,6 +415,9 @@ spec:
       containers:
       - name: backend
         image: python:3.11-slim
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         command: ["sh", "-c", "pip install flask pymysql cryptography --quiet && python /app/main.py"]
         ports:
         - containerPort: 5000
@@ -476,6 +479,9 @@ spec:
       containers:
       - name: frontend
         image: nginx:stable
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
         ports:
         - containerPort: 80
         resources:
